@@ -32,6 +32,18 @@ else
   exit 1
 fi
 
+# Auth de GitHub: sin token, la API limita a 60 req/h y algunas skills fallan.
+# Si tenés gh logueado, tomamos el token (-> 5000 req/h, sin prompt).
+if [ -z "${GITHUB_TOKEN:-}" ] && command -v gh >/dev/null 2>&1; then
+  _tok="$(gh auth token 2>/dev/null || true)"
+  [ -n "$_tok" ] && export GITHUB_TOKEN="$_tok"
+fi
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "Aviso: sin GITHUB_TOKEN podés pegar rate limit de la GitHub API (60 req/h)." >&2
+  echo "       Logueate con 'gh auth login' o exportá GITHUB_TOKEN para evitarlo." >&2
+  echo >&2
+fi
+
 # Cada entrada: "repo-url|nombre-del-skill"
 SKILLS=(
   "https://github.com/ibelick/ui-skills|baseline-ui"

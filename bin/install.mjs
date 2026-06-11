@@ -60,6 +60,19 @@ if (hasCmd("npx")) {
   process.exit(1);
 }
 
+// Auth de GitHub: sin token, la API limita a 60 req/h y algunas skills fallan.
+// Si tenés gh logueado, tomamos el token (-> 5000 req/h, sin prompt).
+if (!process.env.GITHUB_TOKEN && hasCmd("gh")) {
+  const t = spawnSync("gh", ["auth", "token"], { encoding: "utf8", shell: isWin });
+  if (t.status === 0 && t.stdout && t.stdout.trim()) {
+    process.env.GITHUB_TOKEN = t.stdout.trim();
+  }
+}
+if (!process.env.GITHUB_TOKEN) {
+  console.warn("Aviso: sin GITHUB_TOKEN podés pegar rate limit de la GitHub API (60 req/h).");
+  console.warn("       Logueate con 'gh auth login' o exportá GITHUB_TOKEN para evitarlo.\n");
+}
+
 const ok = [];
 const fail = [];
 

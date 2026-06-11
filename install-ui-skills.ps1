@@ -30,6 +30,20 @@ if (Get-Command npx -ErrorAction SilentlyContinue) {
     exit 1
 }
 
+# Auth de GitHub: sin token, la API limita a 60 req/h y algunas skills fallan.
+# Si tenes gh logueado, tomamos el token (-> 5000 req/h, sin prompt).
+if (-not $env:GITHUB_TOKEN -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+    try {
+        $tok = (gh auth token 2>$null)
+        if ($tok) { $env:GITHUB_TOKEN = $tok.Trim() }
+    } catch {}
+}
+if (-not $env:GITHUB_TOKEN) {
+    Write-Host "Aviso: sin GITHUB_TOKEN podes pegar rate limit de la GitHub API (60 req/h)."
+    Write-Host "       Logueate con 'gh auth login' o seteá `$env:GITHUB_TOKEN para evitarlo."
+    Write-Host ""
+}
+
 # Cada entrada: Repo + Skill
 $Skills = @(
   @{ Repo = "https://github.com/ibelick/ui-skills";                       Skill = "baseline-ui" }
