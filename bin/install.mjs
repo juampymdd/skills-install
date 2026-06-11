@@ -10,8 +10,12 @@ import { spawnSync } from "node:child_process";
 // Agente destino. Cambialo si usás otro (cursor, codex, gemini-cli, etc.).
 const AGENT = "claude-code";
 
-// Flags por instalación: -g global (~/.claude/skills), -a agente, -y sin confirmaciones.
-const FLAGS = ["-g", "-a", AGENT, "-y"];
+// Destino:
+//   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
+//   - PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
+// Flags: -a agente, -y sin confirmaciones.
+const PROJECT = !!process.env.PROJECT;
+const FLAGS = PROJECT ? ["-a", AGENT, "-y"] : ["-g", "-a", AGENT, "-y"];
 
 // Cada entrada: [repo-url, nombre-del-skill]
 const SKILLS = [
@@ -76,7 +80,9 @@ if (!process.env.GITHUB_TOKEN) {
 const ok = [];
 const fail = [];
 
-console.log(`Instalando ${SKILLS.length} skills en el agente: ${AGENT}  (runner: ${runner})\n`);
+const scope = PROJECT ? `proyecto (${process.cwd()}/.claude/skills)` : "global (~/.claude/skills)";
+console.log(`Instalando ${SKILLS.length} skills en el agente: ${AGENT}  (runner: ${runner})`);
+console.log(`Destino: ${scope}\n`);
 
 for (const [repo, skill] of SKILLS) {
   console.log(`→ ${skill.padEnd(34)} (${repo})`);

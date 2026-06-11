@@ -57,6 +57,28 @@ bunx github:juampymdd/skills-install
 | web-design-guidelines | vercel-labs/agent-skills |
 | brainstorming | obra/superpowers |
 
+## Global vs por proyecto
+
+Por defecto instala **global** (`~/.claude/skills`), disponible en todos tus proyectos.
+
+Para instalar **en el proyecto actual** (`<cwd>/.claude/skills`, solo ese repo), corré con
+`PROJECT=1` desde la carpeta del proyecto:
+
+```bash
+# macOS · Linux
+cd /ruta/al/proyecto
+PROJECT=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh)"
+
+# con npx / bunx
+PROJECT=1 npx github:juampymdd/skills-install
+```
+
+```powershell
+# Windows
+cd C:\ruta\al\proyecto
+$env:PROJECT = "1"; irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex
+```
+
 ## Otro agente
 
 Los scripts instalan en `claude-code` por defecto. Editá la variable `AGENT` (o `$Agent`)

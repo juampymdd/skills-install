@@ -15,8 +15,17 @@
 # Agente destino. Cambialo si usas otro: -a cursor / codex / gemini-cli, etc.
 $Agent = "claude-code"
 
-# Flags por instalacion: -g global (~/.claude/skills), -a agente, -y sin confirmaciones.
-$Flags = @("-g", "-a", $Agent, "-y")
+# Destino:
+#   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
+#   - $env:PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
+# Flags: -a agente, -y sin confirmaciones.
+if ($env:PROJECT) {
+    $Flags = @("-a", $Agent, "-y")
+    $Scope = "proyecto ($((Get-Location).Path)\.claude\skills)"
+} else {
+    $Flags = @("-g", "-a", $Agent, "-y")
+    $Scope = "global (~/.claude/skills)"
+}
 
 # Runner: npx (Node) o bunx (Bun).
 if (Get-Command npx -ErrorAction SilentlyContinue) {
@@ -72,6 +81,7 @@ $ok = @()
 $fail = @()
 
 Write-Host "Instalando $($Skills.Count) skills en el agente: $Agent  (runner: $Runner)"
+Write-Host "Destino: $Scope"
 Write-Host ""
 
 foreach ($entry in $Skills) {

@@ -18,8 +18,17 @@ set -u
 # Agente destino. Cambialo si usás otro: -a cursor / codex / gemini-cli, etc.
 AGENT="claude-code"
 
-# Flags por instalación: -g global (~/.claude/skills), -a agente, -y sin confirmaciones.
-FLAGS=(-g -a "$AGENT" -y)
+# Destino:
+#   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
+#   - PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
+# Flags: -a agente, -y sin confirmaciones.
+if [ -n "${PROJECT:-}" ]; then
+  FLAGS=(-a "$AGENT" -y)
+  SCOPE="proyecto ($(pwd)/.claude/skills)"
+else
+  FLAGS=(-g -a "$AGENT" -y)
+  SCOPE="global (~/.claude/skills)"
+fi
 
 # Runner: npx (Node) o bunx (Bun).
 if command -v npx >/dev/null 2>&1; then
@@ -72,6 +81,7 @@ ok=()
 fail=()
 
 echo "Instalando ${#SKILLS[@]} skills en el agente: $AGENT  (runner: ${RUNNER[0]})"
+echo "Destino: $SCOPE"
 echo
 
 for entry in "${SKILLS[@]}"; do
