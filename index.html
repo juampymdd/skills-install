@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>install-ui-skills — skills de UI para tu agente de código</title>
+  <meta name="description" content="Una CLI que instala de una sola vez un set curado de ~20 skills de UI, diseño y frontend para agentes de código como Claude Code, Cursor o Codex." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg:       '#0A0B0C',
+            surface:  '#121316',
+            surface2: '#191A1E',
+            fg:       '#ECECED',
+            muted:    '#8A8B92',
+            faint:    '#5C5D64',
+            accent:   '#E8B86D',
+          },
+          fontFamily: {
+            sans: ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    :root { color-scheme: dark; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #0A0B0C;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+
+    /* ---- Ambient backdrop: dotted void + grid that fades + amber aurora ---- */
+    .bg-dots {
+      position: fixed; inset: 0; z-index: -3; pointer-events: none;
+      background-image: radial-gradient(rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    .bg-grid {
+      position: fixed; inset: 0; z-index: -3; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 64px 64px;
+      -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 75%);
+              mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 75%);
+    }
+    .aurora {
+      position: fixed; z-index: -2; pointer-events: none;
+      top: -18vh; left: 50%; width: 90vw; max-width: 1100px; height: 70vh;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(45% 55% at 50% 35%, rgba(232,184,109,0.16), transparent 70%),
+        radial-gradient(35% 45% at 35% 55%, rgba(232,184,109,0.08), transparent 70%);
+      filter: blur(8px);
+      animation: drift 22s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      0%   { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.9; }
+      100% { transform: translateX(-46%) translateY(20px) scale(1.06); opacity: 1; }
+    }
+
+    /* ---- Type ---- */
+    .eyebrow {
+      font-family: 'Geist Mono', ui-monospace, monospace;
+      font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: #8A8B92;
+    }
+    .eyebrow .dot { color: #E8B86D; }
+    .prompt { color: #E8B86D; user-select: none; }
+
+    /* ---- Shadows over borders ---- */
+    .card-shadow {
+      box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+    }
+    .terminal-shadow {
+      box-shadow:
+        0 1px 0 0 rgba(255,255,255,0.06) inset,
+        0 2px 4px rgba(0,0,0,0.5),
+        0 40px 80px -28px rgba(0,0,0,0.9),
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 0 80px -20px rgba(232,184,109,0.25);
+    }
+
+    /* ---- Focus ---- */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid #E8B86D; outline-offset: 2px; border-radius: 6px;
+    }
+
+    /* ---- Press ---- */
+    .press { transition: transform 140ms ease-out; }
+    .press:active { transform: scale(0.96); }
+
+    /* ---- Cards: spotlight glow on hover ---- */
+    .glow-card { position: relative; transition: transform 200ms ease-out, box-shadow 200ms ease-out; }
+    .glow-card::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(232,184,109,0.12), transparent 45%);
+      opacity: 0; transition: opacity 220ms ease-out;
+    }
+    @media (hover: hover) {
+      .glow-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 1px 0 0 rgba(255,255,255,0.07) inset, 0 2px 4px rgba(0,0,0,0.4), 0 22px 50px -18px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,184,109,0.18);
+      }
+      .glow-card:hover::before { opacity: 1; }
+      .glow-card:hover .card-icon { color: #E8B86D; transform: scale(1.08); }
+    }
+    .card-icon { color: #ECECED; transition: color 200ms ease-out, transform 200ms ease-out; }
+
+    /* ---- Scroll reveal ---- */
+    .reveal {
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 600ms cubic-bezier(0.16,1,0.3,1), transform 600ms cubic-bezier(0.16,1,0.3,1);
+      will-change: opacity, transform;
+    }
+    .reveal.in { opacity: 1; transform: none; will-change: auto; }
+
+    /* ---- OS panels ---- */
+    .os-panel { display: none; }
+    .os-panel.active { display: block; }
+
+    /* ---- Copy button state ---- */
+    .copied-label { display: none; }
+    .btn-copied .default-label { display: none; }
+    .btn-copied .copied-label { display: inline-flex; }
+    .btn-copied { color: #E8B86D; }
+
+    /* ---- Code: hide scrollbar, fade right edge ---- */
+    .code-scroll {
+      overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+      -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+              mask-image: linear-gradient(90deg, #000 92%, transparent 100%);
+    }
+    .code-scroll::-webkit-scrollbar { display: none; }
+
+    /* ---- Typewriter caret ---- */
+    .caret {
+      display: inline-block; width: 0.55ch; height: 1.05em; margin-left: 1px;
+      background: #E8B86D; vertical-align: text-bottom; translate: 0 2px;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ---- Marquee ---- */
+    .marquee { display: flex; width: max-content; animation: scroll-x 42s linear infinite; }
+    .marquee.rev { animation-direction: reverse; animation-duration: 52s; }
+    .marquee-mask {
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+              mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    }
+    .marquee-wrap:hover .marquee { animation-play-state: paused; }
+    @keyframes scroll-x { to { transform: translateX(-50%); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .press, .glow-card, .card-icon { transition: none; }
+      .aurora, .marquee, .caret { animation: none; }
+      .marquee { transform: none; }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-fg selection:bg-accent/30 selection:text-fg">
+
+  <div class="bg-dots" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="aurora" aria-hidden="true"></div>
+
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-surface2 focus:text-fg focus:px-4 focus:py-2 focus:rounded-lg focus:font-mono focus:text-sm">
+    Saltar al contenido
+  </a>
+
+  <!-- ============ NAV ============ -->
+  <header class="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/70 backdrop-blur-xl">
+    <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5" aria-label="Principal">
+      <a href="#" class="group flex items-center gap-2.5 font-mono text-sm font-medium text-fg press">
+        <span class="grid size-7 place-items-center rounded-md bg-surface2 ring-1 ring-white/10" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E8B86D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></svg>
+        </span>
+        install-ui-skills
+      </a>
+      <div class="flex items-center gap-1.5">
+        <a href="#instalacion" class="hidden rounded-lg px-3 py-2 font-mono text-sm text-muted transition-colors hover:text-fg sm:block">Instalar</a>
+        <a href="https://github.com/juampymdd/skills-install" target="_blank" rel="noopener noreferrer"
+           class="press flex items-center gap-2 rounded-lg bg-surface2 px-3 py-2 font-mono text-sm text-fg ring-1 ring-white/10 transition-colors hover:bg-surface2/70">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.27a11 11 0 0 0-3.48 21.46c.55.09.73-.24.73-.53v-1.85c-3.03.66-3.67-1.46-3.67-1.46-.5-1.27-1.21-1.6-1.21-1.6-.99-.68.07-.66.07-.66 1.1.08 1.67 1.13 1.67 1.13.97 1.66 2.55 1.18 3.17.9.1-.7.38-1.18.69-1.45-2.42-.28-4.96-1.21-4.96-5.38 0-1.19.42-2.16 1.12-2.92-.11-.28-.49-1.39.11-2.9 0 0 .92-.29 3 1.12a10.4 10.4 0 0 1 5.46 0c2.08-1.41 3-1.12 3-1.12.6 1.51.22 2.62.11 2.9.7.76 1.12 1.73 1.12 2.92 0 4.18-2.55 5.1-4.98 5.37.39.34.74 1 .74 2.03v3.01c0 .29.18.63.74.52A11 11 0 0 0 12 1.27Z"/></svg>
+          <span class="hidden sm:inline">GitHub</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section class="relative mx-auto max-w-5xl px-5 pt-20 pb-16 sm:pt-28 sm:pb-20">
+      <div class="mx-auto max-w-3xl text-center">
+        <p class="reveal mx-auto inline-flex items-center gap-2 rounded-full bg-surface2/60 px-3.5 py-1.5 ring-1 ring-white/10">
+          <span class="relative flex size-1.5">
+            <span class="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60"></span>
+            <span class="relative inline-flex size-1.5 rounded-full bg-accent"></span>
+          </span>
+          <span class="eyebrow !tracking-[0.14em]">Skills curadas para agentes de código</span>
+        </p>
+
+        <h1 class="reveal mt-7 text-balance text-5xl font-bold leading-[0.98] tracking-tight sm:text-7xl lg:text-8xl">
+          Dale <span class="text-accent">buen gusto</span><br class="hidden sm:block" />
+          a tu agente de código.
+        </h1>
+
+        <p class="reveal mx-auto mt-7 max-w-xl text-pretty text-lg leading-relaxed text-muted sm:text-xl">
+          <span class="font-mono text-fg">install-ui-skills</span> baja de una sola vez
+          un set curado de <span class="text-fg tabular-nums">~20</span> skills de UI, accesibilidad,
+          motion y frontend. Un comando, nada permanente.
+        </p>
+      </div>
+
+      <!-- Terminal signature -->
+      <div class="reveal relative mx-auto mt-12 max-w-2xl">
+        <div role="tablist" aria-label="Sistema operativo" class="mb-3 flex justify-center gap-1.5">
+          <button type="button" role="tab" data-os-tab="unix" aria-controls="hero-unix"
+            class="os-tab press rounded-lg px-3.5 py-2 font-mono text-sm transition-colors">macOS · Linux</button>
+          <button type="button" role="tab" data-os-tab="win" aria-controls="hero-win"
+            class="os-tab press rounded-lg px-3.5 py-2 font-mono text-sm transition-colors">Windows</button>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl bg-surface/90 ring-1 ring-white/[0.08] terminal-shadow backdrop-blur-sm">
+          <div class="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
+            <span class="size-3 rounded-full bg-[#2a2b2f]" aria-hidden="true"></span>
+            <span class="size-3 rounded-full bg-[#2a2b2f]" aria-hidden="true"></span>
+            <span class="size-3 rounded-full bg-[#2a2b2f]" aria-hidden="true"></span>
+            <span class="ml-2 font-mono text-xs text-faint">install-ui-skills — bash</span>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div id="hero-unix" role="tabpanel" class="os-panel">
+              <div class="flex items-center gap-4 sm:gap-5">
+                <code class="code-scroll flex-1 font-mono text-[13px] leading-relaxed text-fg sm:text-[15px]"><span class="prompt">$ </span><span class="type-target" data-text="curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh | bash"></span><span class="caret"></span></code>
+                <button type="button" class="copy-btn press shrink-0" aria-label="Copiar comando de instalación"
+                  data-copy="curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh | bash"></button>
+              </div>
+            </div>
+            <div id="hero-win" role="tabpanel" class="os-panel">
+              <div class="flex items-center gap-4 sm:gap-5">
+                <code class="code-scroll flex-1 font-mono text-[13px] leading-relaxed text-fg sm:text-[15px]"><span class="prompt">&gt; </span><span class="type-target" data-text="irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex"></span><span class="caret"></span></code>
+                <button type="button" class="copy-btn press shrink-0" aria-label="Copiar comando de instalación"
+                  data-copy="irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- stats -->
+        <dl class="mt-7 grid grid-cols-3 gap-3">
+          <div class="reveal rounded-xl bg-surface/60 px-3 py-4 text-center ring-1 ring-white/[0.06] card-shadow">
+            <dd class="font-mono text-2xl font-semibold tabular-nums text-fg sm:text-3xl"><span class="counter" data-target="20">0</span></dd>
+            <dt class="mt-1 font-mono text-xs text-faint">skills curadas</dt>
+          </div>
+          <div class="reveal rounded-xl bg-surface/60 px-3 py-4 text-center ring-1 ring-white/[0.06] card-shadow">
+            <dd class="font-mono text-2xl font-semibold tabular-nums text-fg sm:text-3xl"><span class="counter" data-target="1">0</span></dd>
+            <dt class="mt-1 font-mono text-xs text-faint">comando</dt>
+          </div>
+          <div class="reveal rounded-xl bg-surface/60 px-3 py-4 text-center ring-1 ring-white/[0.06] card-shadow">
+            <dd class="font-mono text-2xl font-semibold tabular-nums text-accent sm:text-3xl"><span class="counter" data-target="0">0</span></dd>
+            <dt class="mt-1 font-mono text-xs text-faint">deps permanentes</dt>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE: las 20 skills reales ============ -->
+    <section aria-label="Skills incluidas" class="relative border-y border-white/[0.06] bg-surface/30 py-5">
+      <div class="marquee-wrap marquee-mask overflow-hidden">
+        <div class="marquee" id="marquee-row" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- ============ QUÉ INCLUYE ============ -->
+    <section id="incluye" class="mx-auto max-w-6xl px-5 py-20 sm:py-28">
+      <div class="reveal max-w-2xl">
+        <p class="eyebrow"><span class="dot">//</span> Qué incluye</p>
+        <h2 class="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl">
+          Un set curado, no un cajón de sastre.
+        </h2>
+        <p class="mt-4 text-pretty text-lg text-muted">
+          Cada skill fue elegida a mano. Tu agente las carga solo cuando la tarea lo pide.
+        </p>
+      </div>
+
+      <ul class="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17" cy="14" r="2.5"/><path d="M12 22a10 10 0 1 1 9-14"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Diseño y buen gusto</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Dirección visual, jerarquía y detalle que no parece template.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.8"/><path d="M4 8h16M12 8v6m0 0-3 6m3-6 3 6"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Accesibilidad (WCAG)</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Auditorías de contraste, foco y semántica según pautas WCAG.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Motion y animación</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Timing, easing y los 12 principios aplicados a la web.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Best practices de React</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Patrones de performance, hooks y diagnóstico de componentes.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Componentes shadcn</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Uso correcto del registro, composición y primitivas accesibles.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M7 6h.01M10 6h.01"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Testing en navegador</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">El agente abre el navegador y verifica la UI que construyó.</p>
+        </li>
+        <li class="reveal glow-card card-shadow rounded-2xl bg-surface p-6 ring-1 ring-white/[0.06]">
+          <span class="card-icon mb-4 grid size-11 place-items-center rounded-xl bg-surface2 ring-1 ring-white/[0.06]" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 3Z"/></svg>
+          </span>
+          <h3 class="font-mono text-sm font-medium text-fg">Brainstorming</h3>
+          <p class="mt-1.5 text-pretty text-sm leading-relaxed text-muted">Explora direcciones antes de escribir una sola línea de UI.</p>
+        </li>
+        <li class="reveal card-shadow grid place-items-center rounded-2xl bg-surface2/30 p-6 ring-1 ring-dashed ring-white/[0.08] sm:col-span-2 lg:col-span-1">
+          <p class="text-center font-mono text-sm text-muted">+ más, todas <span class="text-fg">opt-in</span><br />y cargadas bajo demanda</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ============ CÓMO FUNCIONA ============ -->
+    <section id="como-funciona" class="mx-auto max-w-6xl px-5 py-20 sm:py-28">
+      <div class="reveal max-w-2xl">
+        <p class="eyebrow"><span class="dot">//</span> Cómo funciona</p>
+        <h2 class="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl">Tres pasos. Cero configuración.</h2>
+      </div>
+
+      <ol class="mt-12 grid grid-cols-1 gap-3 md:grid-cols-3" role="list">
+        <li class="reveal glow-card card-shadow relative overflow-hidden rounded-2xl bg-surface p-7 ring-1 ring-white/[0.06]">
+          <span class="font-mono text-5xl font-bold tabular-nums text-white/[0.08]">01</span>
+          <h3 class="mt-4 text-xl font-medium">Corrés el comando</h3>
+          <p class="mt-2 text-pretty text-sm leading-relaxed text-muted">Un <span class="font-mono text-fg">curl … | bash</span> (o <span class="font-mono text-fg">irm … | iex</span> en Windows). No instala nada global ni toca tu PATH.</p>
+        </li>
+        <li class="reveal glow-card card-shadow relative overflow-hidden rounded-2xl bg-surface p-7 ring-1 ring-white/[0.06]">
+          <span class="font-mono text-5xl font-bold tabular-nums text-white/[0.08]">02</span>
+          <h3 class="mt-4 text-xl font-medium">Las skills bajan a disco</h3>
+          <p class="mt-2 text-pretty text-sm leading-relaxed text-muted">Se copian a <span class="font-mono text-fg">~/.claude/skills</span>. Son archivos de texto: leelas, editalas o borralas cuando quieras.</p>
+        </li>
+        <li class="reveal glow-card card-shadow relative overflow-hidden rounded-2xl bg-surface p-7 ring-1 ring-white/[0.06]">
+          <span class="font-mono text-5xl font-bold tabular-nums text-white/[0.08]">03</span>
+          <h3 class="mt-4 text-xl font-medium">Tu agente las usa solo</h3>
+          <p class="mt-2 text-pretty text-sm leading-relaxed text-muted">Cuando una tarea de UI lo amerita, el agente carga la skill relevante. Sin que se lo recuerdes.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============ INSTALACIÓN ============ -->
+    <section id="instalacion" class="mx-auto max-w-6xl px-5 py-20 sm:py-28">
+      <div class="reveal mx-auto max-w-2xl text-center">
+        <p class="eyebrow"><span class="dot">//</span> Instalación</p>
+        <h2 class="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl">Elegí tu forma.</h2>
+      </div>
+
+      <div class="reveal mx-auto mt-10 max-w-2xl">
+        <div role="tablist" aria-label="Sistema operativo" class="mb-3 flex justify-center gap-1.5">
+          <button type="button" role="tab" data-os-tab="unix" aria-controls="inst-unix"
+            class="os-tab press rounded-lg px-3.5 py-2 font-mono text-sm transition-colors">macOS · Linux</button>
+          <button type="button" role="tab" data-os-tab="win" aria-controls="inst-win"
+            class="os-tab press rounded-lg px-3.5 py-2 font-mono text-sm transition-colors">Windows</button>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl bg-surface ring-1 ring-white/[0.08] card-shadow">
+          <div id="inst-unix" role="tabpanel" class="os-panel">
+            <div class="flex items-center gap-4 p-4 sm:p-5">
+              <code class="code-scroll flex-1 font-mono text-[13px] leading-relaxed text-fg sm:text-sm"><span class="prompt">$ </span>curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh | bash</code>
+              <button type="button" class="copy-btn press shrink-0" aria-label="Copiar comando para macOS y Linux"
+                data-copy="curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh | bash"></button>
+            </div>
+          </div>
+          <div id="inst-win" role="tabpanel" class="os-panel">
+            <div class="flex items-center gap-4 p-4 sm:p-5">
+              <code class="code-scroll flex-1 font-mono text-[13px] leading-relaxed text-fg sm:text-sm"><span class="prompt">&gt; </span>irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex</code>
+              <button type="button" class="copy-btn press shrink-0" aria-label="Copiar comando para Windows"
+                data-copy="irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="glow-card rounded-2xl bg-surface p-4 ring-1 ring-white/[0.06] card-shadow">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="font-mono text-xs text-faint">con npx (Node)</span>
+              <button type="button" class="copy-btn-sm press" aria-label="Copiar comando npx" data-copy="npx github:juampymdd/skills-install"></button>
+            </div>
+            <code class="code-scroll block font-mono text-[13px] text-fg"><span class="prompt">$ </span>npx github:juampymdd/skills-install</code>
+          </div>
+          <div class="glow-card rounded-2xl bg-surface p-4 ring-1 ring-white/[0.06] card-shadow">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="font-mono text-xs text-faint">con bunx (Bun)</span>
+              <button type="button" class="copy-btn-sm press" aria-label="Copiar comando bunx" data-copy="bunx github:juampymdd/skills-install"></button>
+            </div>
+            <code class="code-scroll block font-mono text-[13px] text-fg"><span class="prompt">$ </span>bunx github:juampymdd/skills-install</code>
+          </div>
+        </div>
+
+        <p class="mt-4 text-pretty text-center text-sm leading-relaxed text-muted">
+          Internamente las skills se bajan con la CLI <span class="font-mono text-fg">skills</span> (Node),
+          así que necesitás <span class="text-fg">Node</span> o <span class="text-fg">Bun</span> instalado.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-white/[0.06]">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-10 sm:flex-row">
+      <p class="font-mono text-sm text-faint">install-ui-skills</p>
+      <a href="https://github.com/juampymdd/skills-install" target="_blank" rel="noopener noreferrer"
+         class="press flex items-center gap-2 rounded-lg px-3 py-2 font-mono text-sm text-muted ring-1 ring-white/10 transition-colors hover:text-fg hover:bg-surface2/60">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.27a11 11 0 0 0-3.48 21.46c.55.09.73-.24.73-.53v-1.85c-3.03.66-3.67-1.46-3.67-1.46-.5-1.27-1.21-1.6-1.21-1.6-.99-.68.07-.66.07-.66 1.1.08 1.67 1.13 1.67 1.13.97 1.66 2.55 1.18 3.17.9.1-.7.38-1.18.69-1.45-2.42-.28-4.96-1.21-4.96-5.38 0-1.19.42-2.16 1.12-2.92-.11-.28-.49-1.39.11-2.9 0 0 .92-.29 3 1.12a10.4 10.4 0 0 1 5.46 0c2.08-1.41 3-1.12 3-1.12.6 1.51.22 2.62.11 2.9.7.76 1.12 1.73 1.12 2.92 0 4.18-2.55 5.1-4.98 5.37.39.34.74 1 .74 2.03v3.01c0 .29.18.63.74.52A11 11 0 0 0 12 1.27Z"/></svg>
+        Ver en GitHub
+      </a>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPT ============ -->
+  <script>
+    (function () {
+      'use strict';
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---------- Copy buttons ---------- */
+      const COPY_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+      const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>';
+
+      document.querySelectorAll('.copy-btn').forEach((btn) => {
+        btn.classList.add('flex','items-center','gap-1.5','rounded-lg','bg-surface2','px-3','py-2','font-mono','text-xs','text-muted','ring-1','ring-white/10','transition-colors','hover:text-fg');
+        btn.innerHTML = '<span class="default-label flex items-center gap-1.5">'+COPY_ICON+'Copiar</span><span class="copied-label items-center gap-1.5">'+CHECK_ICON+'Copiado</span>';
+      });
+      document.querySelectorAll('.copy-btn-sm').forEach((btn) => {
+        btn.classList.add('grid','size-8','place-items-center','rounded-md','text-faint','transition-colors','hover:text-fg','hover:bg-surface2');
+        btn.innerHTML = '<span class="default-label grid place-items-center">'+COPY_ICON+'</span><span class="copied-label place-items-center">'+CHECK_ICON+'</span>';
+      });
+
+      async function copyText(text) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+        } catch (_) {}
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(ta); return ok;
+      }
+
+      let resetTimer = null;
+      document.querySelectorAll('.copy-btn, .copy-btn-sm').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const ok = await copyText(btn.dataset.copy || ''); if (!ok) return;
+          document.querySelectorAll('.btn-copied').forEach((b) => b.classList.remove('btn-copied'));
+          clearTimeout(resetTimer);
+          btn.classList.add('btn-copied');
+          resetTimer = setTimeout(() => btn.classList.remove('btn-copied'), 1800);
+        });
+      });
+
+      /* ---------- Card spotlight follows cursor ---------- */
+      if (!reduce) {
+        document.querySelectorAll('.glow-card').forEach((card) => {
+          card.addEventListener('pointermove', (e) => {
+            const r = card.getBoundingClientRect();
+            card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+            card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+          });
+        });
+      }
+
+      /* ---------- Typewriter (hero terminal) ---------- */
+      const typers = document.querySelectorAll('.type-target');
+      let typeAbort = 0;
+      function typeInto(el) {
+        const full = el.dataset.text || '';
+        if (reduce) { el.textContent = full; return; }
+        const token = ++typeAbort;
+        el.textContent = '';
+        let i = 0;
+        (function step() {
+          if (token !== typeAbort) return;
+          el.textContent = full.slice(0, i);
+          if (i++ <= full.length) setTimeout(step, 14);
+        })();
+      }
+
+      /* ---------- OS tabs (synced) ---------- */
+      const tabs = document.querySelectorAll('.os-tab');
+      function detectOS() {
+        const d = navigator.userAgentData;
+        if (d && typeof d.platform === 'string') return /win/i.test(d.platform) ? 'win' : 'unix';
+        return /win/i.test(navigator.userAgent || navigator.platform || '') ? 'win' : 'unix';
+      }
+      function setOS(os, doType) {
+        document.querySelectorAll('.os-panel').forEach((p) => p.classList.toggle('active', p.id.endsWith(os)));
+        tabs.forEach((t) => {
+          const active = t.dataset.osTab === os;
+          t.setAttribute('aria-selected', active ? 'true' : 'false');
+          t.setAttribute('tabindex', active ? '0' : '-1');
+          t.classList.toggle('bg-surface2', active);
+          t.classList.toggle('text-fg', active);
+          t.classList.toggle('ring-1', active);
+          t.classList.toggle('ring-white/10', active);
+          t.classList.toggle('text-muted', !active);
+        });
+        if (doType) {
+          const active = document.querySelector('#hero-' + os + ' .type-target');
+          if (active) typeInto(active);
+        }
+      }
+      tabs.forEach((t) => {
+        t.addEventListener('click', () => setOS(t.dataset.osTab, true));
+        t.addEventListener('keydown', (e) => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          e.preventDefault();
+          const next = t.dataset.osTab === 'unix' ? 'win' : 'unix';
+          setOS(next, true);
+          const sel = t.closest('[role="tablist"]').querySelector('[aria-selected="true"]');
+          if (sel) sel.focus();
+        });
+      });
+      const initialOS = detectOS();
+      setOS(initialOS, false);
+      // run typewriter once after first paint
+      requestAnimationFrame(() => {
+        const el = document.querySelector('#hero-' + initialOS + ' .type-target');
+        if (el) typeInto(el); else typers.forEach((t) => t.textContent = t.dataset.text);
+      });
+
+      /* ---------- Marquee build (20 real skill slugs) ---------- */
+      const SKILLS = [
+        'frontend-design','baseline-ui','wcag-audit-patterns','fixing-accessibility',
+        '12-principles-of-animation','fixing-motion-performance','react-doctor',
+        'vercel-react-best-practices','shadcn','make-interfaces-feel-better','interface-design',
+        'impeccable','emil-design-eng','design-lab','ui-ux-pro-max','gpt-taste',
+        'bencium-innovative-ux-designer','agent-browser','web-design-guidelines','brainstorming'
+      ];
+      const row = document.getElementById('marquee-row');
+      if (row) {
+        const item = (s) => '<span class="mx-5 inline-flex items-center gap-2 font-mono text-sm text-muted whitespace-nowrap"><span class="text-accent">&#9656;</span>' + s + '</span>';
+        // duplicate the set so the -50% loop is seamless
+        row.innerHTML = (SKILLS.map(item).join('')) + (SKILLS.map(item).join(''));
+      }
+
+      /* ---------- Counters ---------- */
+      function animateCounter(el) {
+        const target = parseInt(el.dataset.target, 10) || 0;
+        if (reduce || target === 0) { el.textContent = String(target); return; }
+        const dur = 900; let start = null;
+        function frame(ts) {
+          if (start === null) start = ts;
+          const p = Math.min(1, (ts - start) / dur);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = String(Math.round(target * eased));
+          if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+
+      /* ---------- Scroll reveal + counter trigger ---------- */
+      const reveals = document.querySelectorAll('.reveal');
+      if (reduce || !('IntersectionObserver' in window)) {
+        reveals.forEach((el) => el.classList.add('in'));
+        document.querySelectorAll('.counter').forEach(animateCounter);
+      } else {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            const sibs = Array.from(el.parentElement.querySelectorAll(':scope > .reveal'));
+            const idx = sibs.indexOf(el);
+            el.style.transitionDelay = (Math.max(0, idx) * 70) + 'ms';
+            el.classList.add('in');
+            el.querySelectorAll('.counter').forEach(animateCounter);
+            io.unobserve(el);
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+        reveals.forEach((el) => io.observe(el));
+      }
+
+      /* ---------- Pause marquee off-screen ---------- */
+      if (!reduce && row && 'IntersectionObserver' in window) {
+        const mObs = new IntersectionObserver((entries) => {
+          entries.forEach((e) => { row.style.animationPlayState = e.isIntersecting ? 'running' : 'paused'; });
+        });
+        mObs.observe(row);
+      }
+    })();
+  </script>
+</body>
+</html>

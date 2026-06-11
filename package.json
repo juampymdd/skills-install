@@ -1,0 +1,22 @@
+{
+  "name": "skills-install",
+  "version": "1.0.0",
+  "description": "Instala de una sola vez un set curado de ~20 skills de UI, accesibilidad, motion y frontend para agentes de codigo (Claude Code, Cursor, Codex, etc.).",
+  "type": "module",
+  "bin": {
+    "skills-install": "bin/install.mjs"
+  },
+  "files": [
+    "bin/install.mjs",
+    "install-ui-skills.sh",
+    "install-ui-skills.ps1"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juampymdd/skills-install.git"
+  },
+  "license": "MIT"
+}
