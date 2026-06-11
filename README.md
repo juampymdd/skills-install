@@ -1,3 +1,5 @@
+<img src="logo.svg" alt="install-ui-skills" width="280" />
+
 # skills-install
 
 Instala de una sola vez un set curado de **~20 skills** de UI, accesibilidad, motion y
