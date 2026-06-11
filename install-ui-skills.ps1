@@ -1,3 +1,4 @@
+param([switch]$Project)
 #
 # install-ui-skills.ps1
 # Instala el set curado de skills de UI / diseno / frontend para tu agente.
@@ -19,7 +20,7 @@ $Agent = "claude-code"
 #   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
 #   - $env:PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
 # Flags: -a agente, -y sin confirmaciones.
-if ($env:PROJECT) {
+if ($Project -or $env:PROJECT) {
     $Flags = @("-a", $Agent, "-y")
     $Scope = "proyecto ($((Get-Location).Path)\.claude\skills)"
 } else {

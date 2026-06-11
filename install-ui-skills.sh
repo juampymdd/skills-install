@@ -22,7 +22,13 @@ AGENT="claude-code"
 #   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
 #   - PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
 # Flags: -a agente, -y sin confirmaciones.
-if [ -n "${PROJECT:-}" ]; then
+# Flag explícito --project / -p (además de la env PROJECT).
+PROJECT_FLAG="${PROJECT:-}"
+for _a in "$@"; do
+  case "$_a" in --project|-p) PROJECT_FLAG=1 ;; esac
+done
+
+if [ -n "$PROJECT_FLAG" ]; then
   FLAGS=(-a "$AGENT" -y)
   SCOPE="proyecto ($(pwd)/.claude/skills)"
 else

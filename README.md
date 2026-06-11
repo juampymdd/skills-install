@@ -63,23 +63,35 @@ bunx github:juampymdd/skills-install
 
 Por defecto instala **global** (`~/.claude/skills`), disponible en todos tus proyectos.
 
-Para instalar **en el proyecto actual** (`<cwd>/.claude/skills`, solo ese repo), corré con
-`PROJECT=1` desde la carpeta del proyecto:
+Para instalar **en el proyecto actual** (`<cwd>/.claude/skills`, solo ese repo): primero
+`cd` a la carpeta del proyecto, y pasá el flag `--project` (PowerShell: `-Project`).
 
-```bash
-# macOS · Linux
-cd /ruta/al/proyecto
-PROJECT=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh)"
+> Importante: el destino es el directorio donde corrés el comando. Si lo corrés parado en
+> tu home, `<cwd>/.claude/skills` coincide con la ruta global y "parece" global. `cd` al
+> proyecto primero. El script imprime `Destino: ...` antes de instalar — verificá esa línea.
 
-# con npx / bunx
-PROJECT=1 npx github:juampymdd/skills-install
-```
+**Windows (PowerShell)**
 
 ```powershell
-# Windows
 cd C:\ruta\al\proyecto
-$env:PROJECT = "1"; irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1 | iex
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.ps1))) -Project
 ```
+
+**macOS · Linux**
+
+```bash
+cd /ruta/al/proyecto
+curl -fsSL https://raw.githubusercontent.com/juampymdd/skills-install/main/install-ui-skills.sh | bash -s -- --project
+```
+
+**npx / bunx** (desde la carpeta del proyecto)
+
+```bash
+npx github:juampymdd/skills-install --project
+bunx github:juampymdd/skills-install --project
+```
+
+(También funciona la variable de entorno `PROJECT=1` / `$env:PROJECT="1"` como alternativa.)
 
 ## Otro agente
 

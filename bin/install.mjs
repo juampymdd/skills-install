@@ -14,7 +14,9 @@ const AGENT = "claude-code";
 //   - default: global (-g) -> ~/.claude/skills, sirve en todos tus proyectos.
 //   - PROJECT=1: instala en el proyecto actual (cwd) -> ./.claude/skills.
 // Flags: -a agente, -y sin confirmaciones.
-const PROJECT = !!process.env.PROJECT;
+const PROJECT =
+  !!process.env.PROJECT ||
+  process.argv.slice(2).some((a) => a === "--project" || a === "-p");
 const FLAGS = PROJECT ? ["-a", AGENT, "-y"] : ["-g", "-a", AGENT, "-y"];
 
 // Cada entrada: [repo-url, nombre-del-skill]
